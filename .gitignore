@@ -1,0 +1,44 @@
+# --- Node.js ---
+node_modules/
+node_modules/
+electron/node_modules/
+
+# --- Logs ---
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+*.log
+
+# --- OS / Editor ---
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# --- Build / Cache ---
+dist/
+build/
+.cache/
+*.tmp
+
+# --- Electron ---
+electron-builder.yml
+*.asar
+*.asar.unpacked
+
+# --- Videos ---
+*.webm
+*.mp4
+*.avi
+*.mov
+
+# --- Env ---
+.env
+.env.local
+.env.*.local
+
+# --- Misc ---
+*.pid
+*.seed
+*.bak

@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport"
+        content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Charal Screamer</title>
+  <link rel="stylesheet" href="/public/styles.css">
+</head>
+<body>
+
+<!-- BOUTON D’AUTORISATION UNIQUE -->
+<div id="screen-auth" style="
+  position:fixed; inset:0; background:#000c; color:white;
+  display:flex; align-items:center; justify-content:center;
+  flex-direction:column; z-index:9999; font-size:22px;">
+  <div>Pour enregistrer les rounds, autorise la capture d’écran</div>
+  <button onclick="requestScreenCapture()" style="
+    margin-top:20px; padding:15px 25px; font-size:20px;">Autoriser</button>
+</div>
+
+<div id="cam-wrap" onclick="startRound();">
+  <img id="cam" src="" alt="webcam">
+  <div id="cam-overlay"></div>
+
+  <div id="hud">
+    <div id="top-bar">
+      <div id="logo">CHARAL SCREAMER</div>
+      <div id="round-badge">ESSAI <span id="round-num">0</span>/3</div>
+    </div>
+    <div id="center-area">
+      <div id="phase-label">PRET A CRIER ?</div>
+      <div id="countdown" style="display:none"></div>
+      <div id="cta">Appuie sur le buzzer et hurle "CHARAL !"</div>
+    </div>
+    <div id="bottom">
+      <div id="meter-wrap">
+        <div id="meter-header">
+          <div>
+            <span id="db-val" style="color:#fff">—</span>
+            <span id="db-unit">dB(A)</span>
+          </div>
+          <div id="db-label">NIVEAU MICRO</div>
+        </div>
+        <div id="bar-track"><div id="bar-fill"></div></div>
+        <div id="chart-wrap">
+          <canvas id="chart" role="img" aria-label="Courbe niveau sonore"></canvas>
+        </div>
+      </div>
+      <div id="scores">
+        <div class="score-card" id="s0">
+          <div class="score-num" id="sv0">—</div>
+          <div class="score-lbl" id="sl0">ESSAI 1</div>
+        </div>
+        <div class="score-card" id="s1">
+          <div class="score-num" id="sv1">—</div>
+          <div class="score-lbl" id="sl1">ESSAI 2</div>
+        </div>
+        <div class="score-card" id="s2">
+          <div class="score-num" id="sv2">—</div>
+          <div class="score-lbl" id="sl2">ESSAI 3</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="result-overlay">
+    <div id="result-title">MEILLEUR SCORE</div>
+    <div id="result-score">—</div>
+    <div id="result-sub">dB(A) — t'as tout donné ?</div>
+    <button id="btn-restart" onclick="resetGame()">REJOUER</button>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script>
+/* ---------------------------------------------------------
+   CONFIG
+--------------------------------------------------------- */
+const PI_IP   = window.location.hostname;
+const WS_URL  = `wss://${PI_IP}:${window.location.port || 3000}`;
+const CAM_URL = `http://${PI_IP}:8080/?action=stream`;
+
+document.getElementById("cam").src = CAM_URL;
+
+const ROUND_DURATION = 3000;
+const COUNTDOWN_FROM = 3;
+const CHART_POINTS   = 40;
+
+let ws=null,currentDb=0,roundActive=false,roundMax=0;
+let roundNum=0,scores=[null,null,null],gameOver=false;
+let chartData=Array(CHART_POINTS).fill(null);
+
+/* ---------------------------------------------------------
+   CHART
+--------------------------------------------------------- */
+const chart = new Chart(document.getElementById('chart'), {
+  type:'line',
+  data:{
+    labels:Array(CHART_POINTS).fill(''),
+    datasets:[{
+      data:chartData,
+      borderColor:'#EF9F27',
+      borderWidth:2,
+      pointRadius:0,
+      tension:0.4,
+      fill:true,
+      backgroundColor:'rgba(239,159,39,0.15)'
+    }]
+  },
+  options:{
+    responsive:true,
+    maintainAspectRatio:false,
+    animation:false,
+    plugins:{legend:{display:false},tooltip:{enabled:false}},
+    scales:{x:{display:false},y:{display:false,min:30,max:110}}
+  }
+});
+
+/* ---------------------------------------------------------
+   SCREEN CAPTURE (Option B)
+--------------------------------------------------------- */
+let screenStream = null;
+let recorder = null;
+let chunks = [];
+
+async function requestScreenCapture() {
+  screenStream = await navigator.mediaDevices.getDisplayMedia({
+    video: { frameRate: 30 },
+    audio: false
+  });
+
+  document.getElementById("screen-auth").style.display = "none";
+
+  console.log("Screen capture autorisée !");
+}
+
+function startScreenRecorder() {
+  chunks = [];
+  recorder = new MediaRecorder(screenStream, {
+    mimeType: "video/webm; codecs=vp9"
+  });
+
+  recorder.ondataavailable = e => chunks.push(e.data);
+
+  recorder.onstop = () => {
+    const blob = new Blob(chunks, { type: "video/webm" });
+
+    // Téléchargement local
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `round_${roundNum}.webm`;
+    a.click();
+  };
+
+  recorder.start();
+}
+
+/* ---------------------------------------------------------
+   WEBSOCKET / AUDIO
+--------------------------------------------------------- */
+function getColor(db){
+  return db<60?'#1D9E75':db<80?'#EF9F27':'#E24B4A';
+}
+
+function connectWS(){
+  ws=new WebSocket(WS_URL);
+  ws.onmessage=(e)=>{
+    const data=JSON.parse(e.data);
+    if(data.type==='button_press'){
+      startRound();
+      return;
+    }
+    const{dbSPL}=data;
+    currentDb=dbSPL;
+    if(roundActive&&dbSPL>roundMax)roundMax=dbSPL;
+    updateMeter(dbSPL);
+  };
+  ws.onclose=()=>setTimeout(connectWS,2000);
+  ws.onerror=()=>ws.close();
+}
+
+function updateMeter(db){
+  const color=getColor(db);
+  const el=document.getElementById('db-val');
+  el.textContent=db.toFixed(1);
+  el.style.color=color;
+
+  const pct=Math.max(0,Math.min(100,((db-30)/80)*100));
+  const bar=document.getElementById('bar-fill');
+  bar.style.width=pct+'%';
+  bar.style.background=color;
+
+  chartData.shift();
+  chartData.push(db);
+  chart.data.datasets[0].data=[...chartData];
+  chart.update('none');
+}
+
+function sleep(ms){return new Promise(r=>setTimeout(r,ms))}
+
+/* ---------------------------------------------------------
+   GAME LOGIC
+--------------------------------------------------------- */
+async function startRound(){
+  if(gameOver||roundNum>=3)return;
+  if(!screenStream){
+    alert("Clique d'abord sur 'Autoriser' pour permettre la capture d’écran.");
+    return;
+  }
+
+  // Start recording
+  startScreenRecorder();
+
+  console.log("StartRound");
+
+  for(let i=0;i<3;i++)document.getElementById('s'+i).classList.remove('active');
+  document.getElementById('s'+roundNum).classList.add('active');
+  document.getElementById('sl'+roundNum).classList.add('active-lbl');
+
+  document.getElementById('phase-label').style.display='none';
+  document.getElementById('cta').textContent='PREPARE-TOI...';
+
+  const cdEl=document.getElementById('countdown');
+  cdEl.style.display='block';
+
+  for(let c=COUNTDOWN_FROM;c>=1;c--){
+    cdEl.textContent=c;
+    cdEl.style.color=c===1?'#E24B4A':'#fff';
+    await sleep(1000);
+  }
+
+  cdEl.textContent='CRIE !';
+  cdEl.style.color='#E24B4A';
+  document.getElementById('cta').textContent='"CHARAL !!!"';
+
+  roundActive=true;
+  roundMax=0;
+
+  let remaining=ROUND_DURATION;
+  while(remaining>0){
+    const sec=Math.ceil(remaining/1000);
+    cdEl.textContent=sec>0?sec:'!';
+    await sleep(100);
+    remaining-=100;
+  }
+
+  roundActive=false;
+  recorder.stop();
+
+  const score=Math.round(roundMax*10)/10;
+  scores[roundNum]=score;
+
+  const sv=document.getElementById('sv'+roundNum);
+  sv.textContent=score.toFixed(1);
+  sv.classList.add('filled');
+
+  document.getElementById('s'+roundNum).classList.remove('active');
+  document.getElementById('s'+roundNum).classList.add('done');
+  document.getElementById('sl'+roundNum).classList.remove('active-lbl');
+
+  roundNum++;
+  document.getElementById('round-num').textContent=roundNum;
+
+  cdEl.style.display='none';
+  document.getElementById('phase-label').style.display='block';
+
+  if(roundNum>=3){
+    endGame();
+  } else {
+    document.getElementById('phase-label').textContent='ESSAI '+(roundNum+1)+' !';
+    document.getElementById('cta').textContent='Appuie sur le buzzer et hurle "CHARAL !"';
+  }
+}
+
+function endGame(){
+  gameOver=true;
+  const best=Math.max(...scores.filter(s=>s!==null));
+  const bestIdx=scores.indexOf(best);
+
+  document.getElementById('sv'+bestIdx).classList.add('gold');
+  document.getElementById('s'+bestIdx).classList.remove('done');
+  document.getElementById('s'+bestIdx).classList.add('best');
+
+  document.getElementById('result-score').textContent=best.toFixed(1)+' dB';
+  document.getElementById('result-overlay').classList.add('show');
+}
+
+function resetGame(){
+  gameOver=false;
+  roundNum=0;
+  scores=[null,null,null];
+
+  document.getElementById('round-num').textContent='0';
+  document.getElementById('result-overlay').classList.remove('show');
+  document.getElementById('phase-label').textContent='PRET A CRIER ?';
+  document.getElementById('phase-label').style.display='block';
+  document.getElementById('cta').textContent='Appuie sur le buzzer et hurle "CHARAL !"';
+
+  for(let i=0;i<3;i++){
+    document.getElementById('sv'+i).textContent='—';
+    document.getElementById('sv'+i).classList.remove('filled','gold');
+    document.getElementById('s'+i).className='score-card';
+    document.getElementById('sl'+i).className='score-lbl';
+  }
+}
+
+connectWS();
+</script>
+</body>
+</html>

@@ -1,0 +1,18 @@
+{
+  "name": "sonometer",
+  "version": "1.0.0",
+  "description": "Sonomètre précis sur Raspberry Pi 5",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "calibrate": "node mainapp.js --calibrate"
+  },
+  "dependencies": {
+    "chalk": "^4.1.2",
+    "multer": "^2.1.1",
+    "node-record-lpcm16": "^1.0.1",
+    "onoff": "^6.0.3",
+    "ws": "^8.20.0",
+    "electron": "^25.9.8"
+  }
+}
