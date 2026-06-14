@@ -73,7 +73,7 @@ const CAM_URL = `http://${PI_IP}:8080/?action=stream`;
 
 document.getElementById("cam").src = CAM_URL;
 
-const ROUND_DURATION = 3000;
+const ROUND_DURATION = 4000;
 const COUNTDOWN_FROM = 3;
 const CHART_POINTS   = 40;
 
@@ -142,6 +142,15 @@ async function autoStartScreenCapture() {
 window.addEventListener("load", () => {
   autoStartScreenCapture();
 });
+
+
+function stopRealRecordingAfterDelay() {
+    setTimeout(() => {
+        console.log("Arrêt 2 secondes après le cri");
+        realRecorder.stop();
+    }, 2000); // 2 secondes
+}
+
 
 /* ---------------------------------------------------------
    AUDIO : micro de la caméra (deviceId fixe)
@@ -259,9 +268,12 @@ async function startRound(){
   const cdEl=document.getElementById('countdown');
   cdEl.style.display='block';
 
+
+
   for(let c=COUNTDOWN_FROM;c>=1;c--){
     cdEl.textContent=c;
-    cdEl.style.color=c===1?'#E24B4A':'#fff';
+    cdEl.style.color=c===0?'#E24B4A':'#fff';
+    //if(c==1)startScreenRecorder();
     await sleep(1000);
   }
 
@@ -283,7 +295,8 @@ async function startRound(){
   }
 
   roundActive=false;
-  if (recorder) recorder.stop();
+  if (recorder) //stopRealRecordingAfterDelay(); //
+    recorder.stop();
 
   const score=Math.round(roundMax*10)/10;
   scores[roundNum]=score;
@@ -324,6 +337,9 @@ function endGame(){
 }
 
 function resetGame(){
+  
+  //location.reload(true);
+  
   gameOver=false;
   roundNum=0;
   scores=[null,null,null];
@@ -334,12 +350,13 @@ function resetGame(){
   document.getElementById('phase-label').style.display='block';
   document.getElementById('cta').textContent='Appuie sur le buzzer et hurle "CHARAL !"';
 
-  for(let i=0;i<3;i++){
+  /*for(let i=0;i<3;i++){
     document.getElementById('sv'+i).textContent='—';
     document.getElementById('sv'+i).classList.remove('filled','gold');
     document.getElementById('s'+i).className='score-card';
     document.getElementById('sl'+i).className='score-lbl';
-  }
+  }*/
+  
 }
 
 connectWS();
