@@ -5,23 +5,31 @@ const fs = require('fs');
 const path = require('path');
 const { triggerRecord } = require('./index');
 const { spawn } = require('child_process');
+const zlib = require('zlib');
 
 const PORT = 3000;
 const VIDEOS_DIR = path.join(__dirname, 'videos');
 const PUBLIC_DIR = path.join(__dirname, 'public');
 
+const CACHE = { files: {}, videoList: null, videoListTime: 0 };
+const CACHE_TTL = 30000; // 30s for video list
+
 function createServer({ onStartRound }) {
 
-  // --- HANDLER HTTP ---
   function requestHandler(req, res) {
+    const acceptEncoding = req.headers['accept-encoding'] || '';
+    const shouldCompress = /gzip/.test(acceptEncoding) && req.method === 'GET';
 
     // Page principale
     if (req.url === '/' || req.url === '/index.html') {
-      res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+      res.writeHead(200, {
+        'Content-Type': 'text/html; charset=utf-8',
+        'Cache-Control': 'no-cache'
+      });
       return fs.createReadStream(path.join(PUBLIC_DIR, 'index.html')).pipe(res);
     }
 
-    // Proxy MJPEG (rotation possible)
+    // Proxy MJPEG
     if (req.url === '/stream') {
       http.get('http://localhost:8080/?action=stream', (camRes) => {
         res.writeHead(200, {
@@ -34,14 +42,30 @@ function createServer({ onStartRound }) {
       return;
     }
 
-    // Liste des vidéos
+    // Liste des vidéos avec cache
     if (req.url === '/videos') {
+      const now = Date.now();
+      if (CACHE.videoList && now - CACHE.videoListTime < CACHE_TTL) {
+        res.writeHead(200, {
+          'Content-Type': 'application/json',
+          'Cache-Control': 'max-age=30'
+        });
+        return res.end(CACHE.videoList);
+      }
+
       const files = fs.readdirSync(VIDEOS_DIR)
         .filter(f => f.endsWith('.mp4'))
         .map(f => ({ name: f, url: `/videos/${f}` }));
 
-      res.writeHead(200, { 'Content-Type': 'application/json' });
-      return res.end(JSON.stringify(files));
+      const json = JSON.stringify(files);
+      CACHE.videoList = json;
+      CACHE.videoListTime = now;
+
+      res.writeHead(200, {
+        'Content-Type': 'application/json',
+        'Cache-Control': 'max-age=30'
+      });
+      return res.end(json);
     }
 
     // Lecture vidéo
@@ -51,19 +75,70 @@ function createServer({ onStartRound }) {
         res.writeHead(404);
         return res.end();
       }
-      res.writeHead(200, { 'Content-Type': 'video/mp4' });
+      res.writeHead(200, {
+        'Content-Type': 'video/mp4',
+        'Cache-Control': 'max-age=86400'
+      });
       return fs.createReadStream(file).pipe(res);
     }
 
-    // Fichiers statiques
+    // Fichiers statiques avec cache
     if (req.url.startsWith('/public/')) {
       const file = path.join(PUBLIC_DIR, req.url.replace('/public/', ''));
       if (!fs.existsSync(file)) {
         res.writeHead(404);
         return res.end();
       }
-      res.writeHead(200);
-      return fs.createReadStream(file).pipe(res);
+
+      const mimeTypes = {
+        '.css': 'text/css',
+        '.js': 'application/javascript',
+        '.html': 'text/html',
+        '.json': 'application/json',
+        '.png': 'image/png',
+        '.jpg': 'image/jpeg',
+        '.gif': 'image/gif',
+        '.svg': 'image/svg+xml'
+      };
+      const ext = path.extname(file).toLowerCase();
+      const contentType = mimeTypes[ext] || 'application/octet-stream';
+
+      const cacheKey = file;
+      if (CACHE.files[cacheKey]) {
+        res.writeHead(200, {
+          'Content-Type': contentType,
+          'Cache-Control': 'max-age=3600'
+        });
+        return res.end(CACHE.files[cacheKey]);
+      }
+
+      fs.readFile(file, (err, data) => {
+        if (err) {
+          res.writeHead(404);
+          return res.end();
+        }
+
+        CACHE.files[cacheKey] = data;
+
+        if (shouldCompress && data.length > 1024) {
+          res.writeHead(200, {
+            'Content-Type': contentType,
+            'Content-Encoding': 'gzip',
+            'Cache-Control': 'max-age=3600'
+          });
+          return zlib.gzip(data, (err, compressed) => {
+            if (err) return res.end(data);
+            res.end(compressed);
+          });
+        }
+
+        res.writeHead(200, {
+          'Content-Type': contentType,
+          'Cache-Control': 'max-age=3600'
+        });
+        res.end(data);
+      });
+      return;
     }
 
     res.writeHead(404);

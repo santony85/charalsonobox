@@ -94,17 +94,15 @@ function triggerRecord() {
   if (gameActive || currentRound >= 3) return;
   gameActive = true;
 
-  // 3 s de compte à rebours côté client, puis 3 s d’enregistrement
-  setTimeout(() => {
-    const ff = recordRound(currentRound + 1, 3000);
-    ff.on('close', () => {
-      currentRound++;
-      gameActive = false;
-      if (currentRound >= 3) {
-        setTimeout(() => { currentRound = 0; }, 10000);
-      }
-    });
-  }, 3000);
+  // Enregistrement: 2s pre + 3s countdown + 4s cry + 2s post = 11s total
+  const ff = recordRound(currentRound + 1, 11000);
+  ff.on('close', () => {
+    currentRound++;
+    gameActive = false;
+    if (currentRound >= 3) {
+      setTimeout(() => { currentRound = 0; }, 10000);
+    }
+  });
 }
 
 function startSonometer() {

@@ -4,9 +4,9 @@ contextBridge.exposeInMainWorld("capture", {
   get: () => ipcRenderer.invoke("get-screen-sources")
 });
 
-contextBridge.exposeInMainWorld("debug", {
+/*contextBridge.exposeInMainWorld("debug", {
   openDevTools: () => ipcRenderer.send("open-devtools")
-});
+});*/
 
 contextBridge.exposeInMainWorld("electron", {
   saveVideo: (arrayBuffer, filename) =>

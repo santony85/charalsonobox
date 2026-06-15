@@ -5,11 +5,11 @@
 function weightingA(f) {
   const f2 = f * f;
   const f4 = f2 * f2;
-  const num = 12194 ** 2 * f4;
+  const num = 148796129 * f4; // 12194^2 = 148796129
   const den =
-	(f2 + 20.6 ** 2) *
-	Math.sqrt((f2 + 107.7 ** 2) * (f2 + 737.9 ** 2)) *
-	(f2 + 12194 ** 2);
+	(f2 + 424.36) * // 20.6^2 = 424.36
+	Math.sqrt((f2 + 11599.29) * (f2 + 544121.41)) * // 107.7^2, 737.9^2
+	(f2 + 148796129);
   return num / den;
 }
 
@@ -40,17 +40,26 @@ function analyze(pcmBuffer, sampleRate = 44100, calibrationOffset = 0, weighting
   }
 
   let rmsLinear;
+  let peakLinear = 0;
 
   if (weighting === 'none') {
-	// RMS direct
-	const sumSq = pcm.reduce((acc, s) => acc + s * s, 0);
+	// RMS direct + find peak in one pass
+	let sumSq = 0;
+	for (let i = 0; i < samples; i++) {
+	  const s = pcm[i];
+	  const abs = s < 0 ? -s : s;
+	  if (abs > peakLinear) peakLinear = abs;
+	  sumSq += s * s;
+	}
 	rmsLinear = Math.sqrt(sumSq / samples);
   } else {
-	// FFT maison (Cooley-Tukey) pour pondération fréquentielle
+	// FFT + find peak in one pass
 	rmsLinear = computeWeightedRMS(pcm, sampleRate, weighting);
+	for (let i = 0; i < samples; i++) {
+	  const abs = pcm[i] < 0 ? -pcm[i] : pcm[i];
+	  if (abs > peakLinear) peakLinear = abs;
+	}
   }
-
-  const peak = Math.max(...pcm.map(Math.abs));
 
   // Référence : seuil d'audibilité (20 µPa → normalisé à 1.0 FS = ~94 dB SPL)
   // On suppose que le FS du micro correspond à ~94 dBSPL (à calibrer)
@@ -63,7 +72,7 @@ function analyze(pcmBuffer, sampleRate = 44100, calibrationOffset = 0, weighting
 
   return {
 	dbSPL: Math.round(dbSPL * 10) / 10,
-	peak: Math.round(20 * Math.log10(Math.max(peak, 1e-10)) * 10) / 10,
+	peak: Math.round(20 * Math.log10(Math.max(peakLinear, 1e-10)) * 10) / 10,
 	rms: rmsLinear
   };
 }
@@ -111,8 +120,7 @@ function fft(input) {
   const imag = new Float64Array(N);
 
   // Bit-reversal
-  let j = 0;
-  for (let i = 1; i < N; i++) {
+  for (let i = 1, j = 0; i < N; i++) {
 	let bit = N >> 1;
 	for (; j & bit; bit >>= 1) j ^= bit;
 	j ^= bit;
@@ -128,13 +136,16 @@ function fft(input) {
 	const wImag = Math.sin(ang);
 	for (let i = 0; i < N; i += len) {
 	  let ur = 1, ui = 0;
-	  for (let k = 0; k < len / 2; k++) {
-		const tr = ur * real[i + k + len / 2] - ui * imag[i + k + len / 2];
-		const ti = ur * imag[i + k + len / 2] + ui * real[i + k + len / 2];
-		real[i + k + len / 2] = real[i + k] - tr;
-		imag[i + k + len / 2] = imag[i + k] - ti;
-		real[i + k] += tr;
-		imag[i + k] += ti;
+	  const halfLen = len >> 1;
+	  for (let k = 0; k < halfLen; k++) {
+		const idx1 = i + k;
+		const idx2 = i + k + halfLen;
+		const tr = ur * real[idx2] - ui * imag[idx2];
+		const ti = ur * imag[idx2] + ui * real[idx2];
+		real[idx2] = real[idx1] - tr;
+		imag[idx2] = imag[idx1] - ti;
+		real[idx1] += tr;
+		imag[idx1] += ti;
 		const newUr = ur * wReal - ui * wImag;
 		ui = ur * wImag + ui * wReal;
 		ur = newUr;

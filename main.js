@@ -22,20 +22,12 @@ app.commandLine.appendSwitch("ozone-platform", "x11");
 // --- Désactiver GPU (stabilité Pi) ---
 app.disableHardwareAcceleration();
 app.commandLine.appendSwitch("disable-gpu");
-app.commandLine.appendSwitch("disable-gpu-compositing");
-app.commandLine.appendSwitch("disable-software-rasterizer");
-app.commandLine.appendSwitch("disable-gpu-rasterization");
-app.commandLine.appendSwitch("disable-gpu-sandbox");
-app.commandLine.appendSwitch("disable-gpu-vsync");
-app.commandLine.appendSwitch("disable-gpu-watchdog");
 
 // --- Forcer rendu CPU SwiftShader ---
 app.commandLine.appendSwitch("use-gl", "swiftshader");
-app.commandLine.appendSwitch("enable-features", "UseSkiaRenderer");
 
 // --- Autoriser capture écran ---
 app.commandLine.appendSwitch("enable-usermedia-screen-capturing");
-app.commandLine.appendSwitch("use-fake-ui-for-media-stream");
 app.commandLine.appendSwitch("auto-select-desktop-capture-source", "Charal Screamer");
 
 function createWindow() {
@@ -83,7 +75,7 @@ function createWindow() {
   tryLoad();
   
   // Créer une fenêtre DevTools séparée
-  const devWin = new BrowserWindow({
+  /*const devWin = new BrowserWindow({
 	width: 900,
 	height: 700,
 	alwaysOnTop: true,       // DevTools reste au-dessus
@@ -94,7 +86,7 @@ function createWindow() {
   win.webContents.setDevToolsWebContents(devWin.webContents);
   
   // Ouvrir DevTools dans cette fenêtre
-  win.webContents.openDevTools({ mode: "detach" });
+  win.webContents.openDevTools({ mode: "detach" });*/
 
   // Quand la page est prête → déclencher la capture
   win.webContents.on("did-frame-finish-load", () => {

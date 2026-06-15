@@ -268,16 +268,18 @@ async function startRound(){
   const cdEl=document.getElementById('countdown');
   cdEl.style.display='block';
 
+  // Démarrer l'enregistrement vidéo 2 sec avant le countdown
+  startScreenRecorder();
+  console.log("Enregistrement vidéo démarré");
 
+  // Attendre 2 secondes avant le countdown visible
+  await sleep(2000);
 
   for(let c=COUNTDOWN_FROM;c>=1;c--){
     cdEl.textContent=c;
     cdEl.style.color=c===0?'#E24B4A':'#fff';
-    //if(c==1)startScreenRecorder();
     await sleep(1000);
   }
-
-  startScreenRecorder();
 
   cdEl.textContent='CRIE !';
   cdEl.style.color='#E24B4A';
@@ -294,8 +296,11 @@ async function startRound(){
     remaining-=100;
   }
 
+  // Attendre 2 secondes après le cri avant d'arrêter l'enregistrement
+  await sleep(2000);
+
   roundActive=false;
-  if (recorder) //stopRealRecordingAfterDelay(); //
+  if (recorder)
     recorder.stop();
 
   const score=Math.round(roundMax*10)/10;

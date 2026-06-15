@@ -1,7 +1,9 @@
 const chalk = require('chalk');
 
-const HISTORY_SIZE = 60; // 60 mesures gardées pour Leq
+const HISTORY_SIZE = 60;
 const history = [];
+let cachedMin = Infinity;
+let cachedMax = -Infinity;
 
 function getColor(db) {
   if (db < 55) return chalk.green;
@@ -18,9 +20,6 @@ function drawBar(db, min = 30, max = 110) {
   return getColor(db)(bar);
 }
 
-/**
- * Leq (niveau équivalent) sur la fenêtre history
- */
 function computeLeq(dbValues) {
   if (!dbValues.length) return 0;
   const sumPow = dbValues.reduce((acc, db) => acc + Math.pow(10, db / 10), 0);
@@ -28,13 +27,24 @@ function computeLeq(dbValues) {
 }
 
 function update(dbSPL, peak, device, weighting) {
-  if (dbSPL === null) return; // chunk invalide, on skip	
+  if (dbSPL === null) return;
+
+  const removed = history.length >= HISTORY_SIZE ? history.shift() : null;
   history.push(dbSPL);
-  if (history.length > HISTORY_SIZE) history.shift();
+
+  // Recalculate min/max incrementally
+  if (history.length === 1) {
+	cachedMin = cachedMax = dbSPL;
+  } else if (removed && (removed === cachedMin || removed === cachedMax)) {
+	// Only recalculate if removed value was min/max
+	cachedMin = Math.min(...history);
+	cachedMax = Math.max(...history);
+  } else {
+	cachedMin = Math.min(cachedMin, dbSPL);
+	cachedMax = Math.max(cachedMax, dbSPL);
+  }
 
   const leq = Math.round(computeLeq(history) * 10) / 10;
-  const max = Math.max(...history);
-  const min = Math.min(...history);
 
   const color = getColor(dbSPL);
   const lines = [];
@@ -48,8 +58,8 @@ function update(dbSPL, peak, device, weighting) {
   lines.push(`  ${drawBar(dbSPL)}`);
   lines.push('');
   lines.push(`  Leq (${HISTORY_SIZE} mesures)  : ${chalk.cyan(leq.toFixed(1))} dBSPL`);
-  lines.push(`  Max observé        : ${chalk.red(max.toFixed(1))} dBSPL`);
-  lines.push(`  Min observé        : ${chalk.green(min.toFixed(1))} dBSPL`);
+  lines.push(`  Max observé        : ${chalk.red(cachedMax.toFixed(1))} dBSPL`);
+  lines.push(`  Min observé        : ${chalk.green(cachedMin.toFixed(1))} dBSPL`);
   lines.push(`  Pic instantané     : ${chalk.magenta(peak.toFixed(1))} dBFS`);
   lines.push('');
 

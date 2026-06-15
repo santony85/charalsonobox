@@ -34,14 +34,27 @@ function startCapture({ sampleRate = 44100, channels = 1, device = 'plughw:3,0',
     '-'
   ]);
 
-  let buffer = Buffer.alloc(0);
+  const ringBuffer = Buffer.alloc(chunkSize * 4); // Circular buffer
+  let writePos = 0;
 
   rec.stdout.on('data', (data) => {
-	buffer = Buffer.concat([buffer, data]);
-	while (buffer.length >= chunkSize) {
-	  const chunk = buffer.slice(0, chunkSize);
-	  buffer = buffer.slice(chunkSize);
-	  if (chunk.length >= 2) onChunk(chunk);
+	for (let i = 0; i < data.length; i++) {
+	  ringBuffer[writePos] = data[i];
+	  writePos = (writePos + 1) % ringBuffer.length;
+
+	  if (writePos % chunkSize === 0) {
+		const startPos = (writePos - chunkSize + ringBuffer.length) % ringBuffer.length;
+		let chunk;
+		if (startPos + chunkSize <= ringBuffer.length) {
+		  chunk = ringBuffer.slice(startPos, startPos + chunkSize);
+		} else {
+		  chunk = Buffer.alloc(chunkSize);
+		  const part1Len = ringBuffer.length - startPos;
+		  ringBuffer.copy(chunk, 0, startPos, ringBuffer.length);
+		  ringBuffer.copy(chunk, part1Len, 0, chunkSize - part1Len);
+		}
+		if (chunk.length >= 2) onChunk(chunk);
+	  }
 	}
   });
 
