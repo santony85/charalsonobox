@@ -9,7 +9,7 @@
 </head>
 <body>
 
-<div id="cam-wrap" onclick="startRound();">
+<div id="cam-wrap">
   <img id="cam" src="" alt="webcam">
   <div id="cam-overlay"></div>
 
@@ -38,7 +38,7 @@
         </div>
       </div>
       <div id="scores">
-        <div class="score-card" id="s0">
+        <div class="score-card" id="s0" onclick="startRound();">
           <div class="score-num" id="sv0">—</div>
           <div class="score-lbl" id="sl0">ESSAI 1</div>
         </div>
@@ -55,6 +55,7 @@
   </div>
 
   <div id="result-overlay">
+    <img id="qr-code" style="display:none;" />
     <div id="result-title">MEILLEUR SCORE</div>
     <div id="result-score">—</div>
     <div id="result-sub">dB(A) — t'as tout donné ?</div>
@@ -149,6 +150,13 @@ function stopRealRecordingAfterDelay() {
         console.log("Arrêt 2 secondes après le cri");
         realRecorder.stop();
     }, 2000); // 2 secondes
+}
+
+function showQRCode(filename) {
+    const qr = document.getElementById("qr-code");
+    //qr.src = `https://snt-savary.fr:3000/qr?file=${filename}`;
+    qr.src = "http://snt-savary.fr:3000/qr?file=round_3.webm";
+    qr.style.display = "block";
 }
 
 
@@ -273,7 +281,7 @@ async function startRound(){
   console.log("Enregistrement vidéo démarré");
 
   // Attendre 2 secondes avant le countdown visible
-  await sleep(2000);
+  //await sleep(2000);
 
   for(let c=COUNTDOWN_FROM;c>=1;c--){
     cdEl.textContent=c;
@@ -339,6 +347,9 @@ function endGame(){
 
   document.getElementById('result-score').textContent=best.toFixed(1)+' dB';
   document.getElementById('result-overlay').classList.add('show');
+  
+  showQRCode("round_3.webm");
+  
 }
 
 function resetGame(){
@@ -355,12 +366,12 @@ function resetGame(){
   document.getElementById('phase-label').style.display='block';
   document.getElementById('cta').textContent='Appuie sur le buzzer et hurle "CHARAL !"';
 
-  /*for(let i=0;i<3;i++){
+  for(let i=0;i<3;i++){
     document.getElementById('sv'+i).textContent='—';
     document.getElementById('sv'+i).classList.remove('filled','gold');
     document.getElementById('s'+i).className='score-card';
     document.getElementById('sl'+i).className='score-lbl';
-  }*/
+  }
   
 }
 

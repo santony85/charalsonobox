@@ -6,6 +6,7 @@ const path = require('path');
 const { triggerRecord } = require('./index');
 const { spawn } = require('child_process');
 const zlib = require('zlib');
+const QRCode = require("qrcode");
 
 const PORT = 3000;
 const VIDEOS_DIR = path.join(__dirname, 'videos');
@@ -40,6 +41,33 @@ function createServer({ onStartRound }) {
         camRes.pipe(res);
       });
       return;
+    }
+    
+    //generateur qrcode
+    if (req.url.startsWith("/qr")) {
+        const urlObj = new URL(req.url, `https://${req.headers.host}`);
+        const filename = urlObj.searchParams.get("file");
+    
+        if (!filename) {
+            res.writeHead(400, { "Content-Type": "text/plain" });
+            return res.end("Missing file");
+        }
+    
+        // URL publique de la vidéo
+        const videoUrl = `https://snt-savary.fr:3000/videos/${filename}`;
+    
+        QRCode.toBuffer(videoUrl, { type: "png" })
+            .then(buffer => {
+                res.writeHead(200, { "Content-Type": "image/png" });
+                res.end(buffer);
+            })
+            .catch(err => {
+                console.error("QR error:", err);
+                res.writeHead(500, { "Content-Type": "text/plain" });
+                res.end("QR generation error");
+            });
+    
+        return; // IMPORTANT
     }
 
     // Liste des vidéos avec cache
