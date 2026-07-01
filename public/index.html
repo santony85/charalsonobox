@@ -228,8 +228,15 @@ function connectWS(){
   ws=new WebSocket(WS_URL);
   ws.onmessage=(e)=>{
     const data=JSON.parse(e.data);
+    console.log(data.type);
     if(data.type==='button_press'){
-      startRound();
+      console.log(data);
+      if(!gameOver)startRound();
+      else {
+        resetGame();
+        window.screamer.recordingFinished();
+        console.log("reset led");
+      }
       return;
     }
     const{dbSPL}=data;
@@ -374,6 +381,8 @@ function resetGame(){
     document.getElementById('s'+i).className='score-card';
     document.getElementById('sl'+i).className='score-lbl';
   }
+  
+  
   
 }
 

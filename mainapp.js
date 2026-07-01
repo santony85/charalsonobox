@@ -29,7 +29,8 @@ arduino.on("ready", () => {
 arduino.on("button", pressed => {
   if (pressed) {
     console.log("▶ Bouton Arduino → triggerRecord()");
-    triggerRecord();
+    //triggerRecord();
+    broadcast({ type: "button_press" });
     arduino.ledOff();  // buzzer OFF dès que le joueur appuie
   }
 });

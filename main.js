@@ -54,7 +54,7 @@ function createWindow() {
   // Lance ton serveur Node
   const backend = spawn('node', ['mainapp.js'], {
     cwd: __dirname,
-    stdio: 'inherit'
+    stdio: ['pipe', 'pipe', 'pipe', 'ipc']
   });
   
   backend.on('close', (code) => {
@@ -131,6 +131,7 @@ function createWindow() {
   });
   
   connectWS();
+  
 
 
 }

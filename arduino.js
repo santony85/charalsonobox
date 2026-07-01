@@ -21,8 +21,9 @@ class ArduinoGPIO extends EventEmitter {
 
 	// Lecture bouton
 	this.parser.on("data", line => {
-	  if (line.startsWith("BTN:")) {
-		const state = line.split(":")[1].trim();
+	  if (line.startsWith("BTN_PRESS")) {
+		//const state = line.split(":")[1].trim();
+		const state = "0";
 		this.emit("button", state === "0"); // true = appuyé
 	  }
 	});

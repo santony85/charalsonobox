@@ -186,9 +186,16 @@ function createServer({ onStartRound }) {
     ws.on('message', (raw) => {
       try {
         const msg = JSON.parse(raw);
+        console.log("->"+msg.type);
         if (msg.type === 'start_round' && typeof onStartRound === 'function') {
           triggerRecord();
           onStartRound();
+        }
+        if(msg.type === 'button_press' && typeof onStartRound === 'function'){
+          console.log('button_press');
+          //triggerRecord();
+          //onStartRound();
+          //broadcast({ type: "button_press" });
         }
       } catch (e) {
         console.error('WS message error:', e.message);
