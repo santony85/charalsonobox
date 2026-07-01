@@ -9,6 +9,8 @@ const {
 const path = require("path");
 const fs = require("fs");
 
+const WebSocket = require("ws");
+
 const { spawn } = require("child_process");
 
 // IP WireGuard du VPS
@@ -30,6 +32,23 @@ app.commandLine.appendSwitch("use-gl", "swiftshader");
 app.commandLine.appendSwitch("enable-usermedia-screen-capturing");
 app.commandLine.appendSwitch("auto-select-desktop-capture-source", "Charal Screamer");
 
+function connectWS() {
+  ws = new WebSocket("ws://127.0.0.1:3000");
+
+  ws.on("open", () => {
+    console.log("Electron connecté au WS du front");
+  });
+
+  ws.on("close", () => {
+    console.log("WS fermé, reconnexion…");
+    setTimeout(connectWS, 2000);
+  });
+
+  ws.on("error", err => {
+    console.error("Erreur WS Electron → front :", err);
+  });
+}
+
 function createWindow() {
   
   // Lance ton serveur Node
@@ -41,9 +60,26 @@ function createWindow() {
   backend.on('close', (code) => {
     console.log('Backend exited with code', code);
   });
+  
+  backend.on("message", msg => {
+    if (msg.type === "startRecording") {
+      win.webContents.send("startRecording");
+      console.log("start recording");
+    }
+  });
+  
+  // Message venant du front
+  ipcMain.on("recordingFinished", () => {
+    backend.send({ type: "recordingFinished" });
+  });
+  
+  ipcMain.on("qrcodeValidated", () => {
+    backend.send({ type: "qrcodeValidated" });
+  });
+  
   const win = new BrowserWindow({
-	fullscreen: true,
-	autoHideMenuBar: true,
+	fullscreen: false,
+	autoHideMenuBar: false,
 	webPreferences: {
 	  preload: path.join(__dirname, "preload.js"),
 	  nodeIntegration: false,
@@ -75,7 +111,7 @@ function createWindow() {
   tryLoad();
   
   // Créer une fenêtre DevTools séparée
-  /*const devWin = new BrowserWindow({
+  const devWin = new BrowserWindow({
 	width: 900,
 	height: 700,
 	alwaysOnTop: true,       // DevTools reste au-dessus
@@ -86,13 +122,15 @@ function createWindow() {
   win.webContents.setDevToolsWebContents(devWin.webContents);
   
   // Ouvrir DevTools dans cette fenêtre
-  win.webContents.openDevTools({ mode: "detach" });*/
+  win.webContents.openDevTools({ mode: "detach" });
 
   // Quand la page est prête → déclencher la capture
   win.webContents.on("did-frame-finish-load", () => {
 	console.log("Page chargée → démarrage capture");
 	win.webContents.send("start-capture");
   });
+  
+  connectWS();
 
 
 }

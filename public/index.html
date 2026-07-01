@@ -201,6 +201,8 @@ function startScreenRecorder() {
 
     recorder.onstop = () => {
       const blob = new Blob(chunks, { type: "video/webm" });
+      
+      window.screamer.recordingFinished();
       console.log("Saving to file");
       blob.arrayBuffer().then(buffer => {
         window.electron.saveVideo(buffer, `round_${roundNum}.webm`);

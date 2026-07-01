@@ -118,7 +118,7 @@ function startSonometer() {
     onChunk: (buf) => {
       const result = analyze(buf, CONFIG.sampleRate, calibrationOffset, CONFIG.weighting);
       if (result) {
-        update(result.dbSPL, result.peak, CONFIG.device, CONFIG.weighting);
+        //update(result.dbSPL, result.peak, CONFIG.device, CONFIG.weighting);
         broadcast({
           type: 'level',
           dbSPL: result.dbSPL,
