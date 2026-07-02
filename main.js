@@ -78,8 +78,8 @@ function createWindow() {
   });
   
   const win = new BrowserWindow({
-	fullscreen: false,
-	autoHideMenuBar: false,
+	fullscreen: true,
+	autoHideMenuBar: true,
 	webPreferences: {
 	  preload: path.join(__dirname, "preload.js"),
 	  nodeIntegration: false,
@@ -98,6 +98,8 @@ function createWindow() {
 	win.webContents.openDevTools({ mode: "detach" });
   });
 
+  win.webContents.session.clearCache();
+  
   // Charger ton serveur local en HTTP
   const url = "http://localhost:3000";
 
@@ -111,7 +113,7 @@ function createWindow() {
   tryLoad();
   
   // Créer une fenêtre DevTools séparée
-  const devWin = new BrowserWindow({
+  /*const devWin = new BrowserWindow({
 	width: 900,
 	height: 700,
 	alwaysOnTop: true,       // DevTools reste au-dessus
@@ -122,7 +124,7 @@ function createWindow() {
   win.webContents.setDevToolsWebContents(devWin.webContents);
   
   // Ouvrir DevTools dans cette fenêtre
-  win.webContents.openDevTools({ mode: "detach" });
+  win.webContents.openDevTools({ mode: "detach" });*/
 
   // Quand la page est prête → déclencher la capture
   win.webContents.on("did-frame-finish-load", () => {

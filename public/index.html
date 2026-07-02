@@ -4,8 +4,12 @@
   <meta charset="UTF-8">
   <meta name="viewport"
         content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
   <title>Charal Screamer</title>
-  <link rel="stylesheet" href="/public/styles.css">
+  <link rel="stylesheet" href="/public/style.css">
+
 </head>
 <body>
 
@@ -14,14 +18,30 @@
   <div id="cam-overlay"></div>
 
   <div id="hud">
-    <div id="top-bar">
-      <div id="logo">CHARAL SCREAMER</div>
-      <div id="round-badge">ESSAI <span id="round-num">0</span>/3</div>
+
+<div id="top-bar">
+    <div id="logo">
+      <div class="logo-stack">
+        <img class="logo-charal"
+             src="https://www.charal.fr/wp-content/themes/charal/images/charal.webp"
+             alt="Logo Charal">
+  
+        <img class="logo-charal-sticky"
+             src="https://www.charal.fr/wp-content/themes/charal/images/vivons-fort.webp"
+             alt="Vivons Fort">
+      </div>
+  
+      <div id="logo-title">CHARAL SCREAMER</div>
     </div>
+  
+    <div id="round-badge">ESSAI <span id="round-num">0</span>/3</div>
+  </div>
+  
     <div id="center-area">
       <div id="phase-label">PRET A CRIER ?</div>
       <div id="countdown" style="display:none"></div>
-      <div id="cta">Appuie sur le buzzer et hurle "CHARAL !"</div>
+      <div id="cta">Appuie sur le buzzer et hurle "CHARAL !"
+      </div>
     </div>
     <div id="bottom">
       <div id="meter-wrap">
@@ -42,7 +62,7 @@
           <div class="score-num" id="sv0">—</div>
           <div class="score-lbl" id="sl0">ESSAI 1</div>
         </div>
-        <div class="score-card" id="s1">
+        <div class="score-card" id="s1" onclick="playKaraoke();">
           <div class="score-num" id="sv1">—</div>
           <div class="score-lbl" id="sl1">ESSAI 2</div>
         </div>
@@ -81,6 +101,17 @@ const CHART_POINTS   = 40;
 let ws=null,currentDb=0,roundActive=false,roundMax=0;
 let roundNum=0,scores=[null,null,null],gameOver=false;
 let chartData=Array(CHART_POINTS).fill(null);
+
+//document.querySelector('link[href*="/public/style.css"]').href = "/public/style.css?v=" + Date.now();
+
+window.addEventListener("DOMContentLoaded", () => {
+  const link = document.querySelector('link[href*="public/style.css"]');
+  console.log(link); // doit afficher <link ...>
+  if (link) {
+    link.href = "/public/style.css";
+  }
+});
+
 
 /* ---------------------------------------------------------
    CHART
@@ -267,6 +298,19 @@ function updateMeter(db){
 
 function sleep(ms){return new Promise(r=>setTimeout(r,ms))}
 
+function playKaraoke() {
+  const cta = document.getElementById('cta');
+  cta.style.fontSize = "100px";
+  cta.textContent = 'CHAAARAAAAAAL !!!';
+
+  cta.classList.remove("karaoke");
+  void cta.offsetWidth; // reset
+  cta.classList.add("karaoke");
+    
+    
+}
+
+
 /* ---------------------------------------------------------
    GAME LOGIC
 --------------------------------------------------------- */
@@ -281,6 +325,7 @@ async function startRound(){
 
   document.getElementById('phase-label').style.display='none';
   document.getElementById('cta').textContent='PREPARE-TOI...';
+
 
   const cdEl=document.getElementById('countdown');
   cdEl.style.display='block';
@@ -300,7 +345,23 @@ async function startRound(){
 
   cdEl.textContent='CRIE !';
   cdEl.style.color='#E24B4A';
-  document.getElementById('cta').textContent='"CHARAL !!!"';
+  
+  //document.getElementById('cta').textContent='"CHAAARAAAAAAL !!!"';
+  
+  /*const cta = document.getElementById('cta');
+  cta.textContent = 'CHAAARAAAAAAL !!!';
+  cta.setAttribute("data-text", 'CHAAARAAAAAAL !!!');
+  cta.style.fontSize = "80px";
+  // Reset animation (au cas où elle a déjà été jouée)
+  cta.classList.remove("karaoke");
+  // Forcer le navigateur à recalculer le style
+  //void cta.offsetWidth;
+  // Déclencher l’animation
+  cta.classList.add("karaoke");*/
+  
+  playKaraoke();
+
+
 
   roundActive=true;
   roundMax=0;
@@ -341,7 +402,16 @@ async function startRound(){
     endGame();
   } else {
     document.getElementById('phase-label').textContent='ESSAI '+(roundNum+1)+' !';
+    
+    document.getElementById('cta').style.fontSize = "clamp(14px, 4.5vw, 52px)";
     document.getElementById('cta').textContent='Appuie sur le buzzer et hurle "CHARAL !"';
+    const cta = document.getElementById('cta');
+    cta.classList.remove("karaoke");
+    void cta.offsetWidth; // reset
+
+    //const cta = document.getElementById('cta');
+    //cta.classList.remove("karaoke");
+    //document.getElementById('cta').style.fontSize = "clamp(14px, 4.5vw, 52px)";
   }
 }
 
@@ -356,7 +426,7 @@ function endGame(){
 
   document.getElementById('result-score').textContent=best.toFixed(1)+' dB';
   document.getElementById('result-overlay').classList.add('show');
-  
+    
   showQRCode("round_3.webm");
   
 }
@@ -373,8 +443,10 @@ function resetGame(){
   document.getElementById('result-overlay').classList.remove('show');
   document.getElementById('phase-label').textContent='PRET A CRIER ?';
   document.getElementById('phase-label').style.display='block';
+  
   document.getElementById('cta').textContent='Appuie sur le buzzer et hurle "CHARAL !"';
-
+  //document.getElementById('cta').style.fontSize = "clamp(14px, 4.5vw, 52px)";
+  
   for(let i=0;i<3;i++){
     document.getElementById('sv'+i).textContent='—';
     document.getElementById('sv'+i).classList.remove('filled','gold');
