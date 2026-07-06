@@ -66,7 +66,7 @@
           <div class="score-num" id="sv1">—</div>
           <div class="score-lbl" id="sl1">ESSAI 2</div>
         </div>
-        <div class="score-card" id="s2">
+        <div class="score-card" id="s2" onclick="endGame();">
           <div class="score-num" id="sv2">—</div>
           <div class="score-lbl" id="sl2">ESSAI 3</div>
         </div>
@@ -75,13 +75,21 @@
   </div>
 
   <div id="result-overlay">
-    <img id="qr-code" style="display:none;" />
+    <div id="qr-wrapper">
+      <div class="pie spinner"></div>
+      <div class="pie filler"></div>
+      <div class="mask"></div>
+  
+      <img id="qr-code" alt="QR code" />
+      <div id="qr-seconds">30</div>
+    </div>
+  
     <div id="result-title">MEILLEUR SCORE</div>
     <div id="result-score">—</div>
     <div id="result-sub">dB(A) — t'as tout donné ?</div>
     <button id="btn-restart" onclick="resetGame()">REJOUER</button>
   </div>
-</div>
+
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 <script>
@@ -173,6 +181,31 @@ async function autoStartScreenCapture() {
 
 window.addEventListener("load", () => {
   autoStartScreenCapture();
+});
+
+function startQrCountdown() {
+  const qrCode = document.getElementById("qr-code");
+  const qrSeconds = document.getElementById("qr-seconds");
+
+  qrCode.style.display = "block";
+
+  let remaining = 30;
+
+  const interval = setInterval(() => {
+    remaining--;
+    qrSeconds.textContent = remaining;
+
+    if (remaining <= 0) {
+      clearInterval(interval);
+      // fin du timer
+    }
+  }, 1000);
+}
+
+
+document.addEventListener("DOMContentLoaded", () => {
+  document.getElementById("result-overlay").classList.add("show");
+  startQrCountdown(); // si tu veux lancer le chrono aussi
 });
 
 
@@ -336,7 +369,14 @@ async function startRound(){
 
   // Attendre 2 secondes avant le countdown visible
   //await sleep(2000);
+  
+  roundNum2 = roundNum+1
+  
+  //roundNum++;
+  document.getElementById('round-num').textContent=roundNum2;
+  
 
+  
   for(let c=COUNTDOWN_FROM;c>=1;c--){
     cdEl.textContent=c;
     cdEl.style.color=c===0?'#E24B4A':'#fff';
@@ -346,19 +386,7 @@ async function startRound(){
   cdEl.textContent='CRIE !';
   cdEl.style.color='#E24B4A';
   
-  //document.getElementById('cta').textContent='"CHAAARAAAAAAL !!!"';
-  
-  /*const cta = document.getElementById('cta');
-  cta.textContent = 'CHAAARAAAAAAL !!!';
-  cta.setAttribute("data-text", 'CHAAARAAAAAAL !!!');
-  cta.style.fontSize = "80px";
-  // Reset animation (au cas où elle a déjà été jouée)
-  cta.classList.remove("karaoke");
-  // Forcer le navigateur à recalculer le style
-  //void cta.offsetWidth;
-  // Déclencher l’animation
-  cta.classList.add("karaoke");*/
-  
+
   playKaraoke();
 
 
@@ -426,7 +454,7 @@ function endGame(){
 
   document.getElementById('result-score').textContent=best.toFixed(1)+' dB';
   document.getElementById('result-overlay').classList.add('show');
-    
+  startQrCountdown();  
   showQRCode("round_3.webm");
   
 }

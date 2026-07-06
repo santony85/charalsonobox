@@ -28,6 +28,7 @@
 	width: 520px;
 	height: 520px;
 	margin-top: 20px;
+	margin-bottom: 20px;
 	border-radius: 12px;
 	background: white;
 	padding: 10px;
@@ -238,7 +239,8 @@
   #result-overlay{
 	position:absolute;inset:0;
 	background:rgba(8,8,15,0.93);
-	display:none;flex-direction:column;
+	display:flex;
+	flex-direction:column;
 	align-items:center;justify-content:center;
 	gap:3vw;z-index:10;padding:6vw;
   }
@@ -267,5 +269,89 @@
 	background:var(--green);color:#fff;
 	border:none;border-radius:2vw;cursor:pointer;
   }
+  
+  
+/* QR wrapper */
+  #qr-wrapper {
+	position:relative;
+	width:520px;
+	height:520px;
+	display:flex;
+	justify-content:center;
+	align-items:center;
+  }
+  
+  /* QR code */
+  /*#qr-code {
+	width:520px;
+	height:520px;
+	z-index:10;
+	display:block;
+	object-fit:contain;
+	visibility: hidden;
+  }*/
+  
+  /* secondes restantes */
+  #qr-seconds {
+	position:absolute;
+	bottom:-80px;
+	font-size:clamp(24px,8vw,60px);
+	font-family:'Bebas Neue',sans-serif;
+	color:white;
+	text-align:center;
+	z-index:20;
+  }
+  
+  /* --- GAUGE JSFIDDLE ADAPTÉ --- */
+  
+  .pie {
+	position:absolute;
+	width:520px;
+	height:520px;
+	border-radius:50%;
+	clip:rect(0px, 520px, 520px, 260px);
+  }
+  
+  .spinner {
+	border:20px solid #E30613;
+	box-sizing:border-box;
+	animation: rota 30s linear forwards;
+  }
+  
+  .filler {
+	border:20px solid #E30613;
+	box-sizing:border-box;
+	clip:rect(0px, 260px, 520px, 0px);
+	animation: fill 30s steps(1,end) forwards;
+  }
+  
+  .mask {
+	position:absolute;
+	width:520px;
+	height:520px;
+	border-radius:50%;
+	clip:rect(0px, 260px, 520px, 0px);
+	background:rgba(8,8,15,0.93);
+	animation: mask 30s steps(1,end) forwards;
+  }
+  
+  /* Animations JSFiddle */
+@keyframes rota {
+	  0%   { transform: rotate(0deg); }
+	  50%  { transform: rotate(180deg); }
+	  100% { transform: rotate(180deg); } /* reste figé sur la 2e moitié */
+  }
+  
+  @keyframes fill {
+	  0%, 50%   { opacity: 0; }
+	  50.01%, 100% { opacity: 1; } /* bascule net à 15s */
+  }
+  
+  @keyframes mask {
+	  0%, 50%   { opacity: 1; }
+	  50.01%, 100% { opacity: 0; } /* se retire net à 15s */
+  }
+
+
   
 
