@@ -74,20 +74,35 @@
     </div>
   </div>
 
-  <div id="result-overlay">
-    <div id="qr-wrapper">
-      <div class="pie spinner"></div>
-      <div class="pie filler"></div>
-      <div class="mask"></div>
+<div id="result-overlay">
   
-      <img id="qr-code" alt="QR code" />
+  <center>
+        <div class="logo-stack2">
+          <img class="logo-charal2"
+               src="https://www.charal.fr/wp-content/themes/charal/images/charal.webp"
+               alt="Logo Charal">
+    
+          <img class="logo-charal-sticky2"
+               src="https://www.charal.fr/wp-content/themes/charal/images/vivons-fort.webp"
+               alt="Vivons Fort">
+        </div>
+  
+  </center>
+  
+    <div id="result-title">MEILLEUR SCORE</div>
+    <div id="result-score">--</div>
+    <div id="result-sub">dB(A) — t'as tout donné ?</div>
+  
+    <div id="qr-wrapper">
+    <svg id="pie-svg" viewBox="-10 -10 20 20" fill="none" stroke-linecap="round">
+      <circle class="track" r="9.6" pathLength="100" stroke-width="0.75" stroke-dasharray="100 100"></circle>
+      <circle class="progress" r="9.6" pathLength="100" stroke-width="0.75" stroke-dasharray="100 100"></circle>
+    </svg>
+      <img id="qr-code" alt="QR code"/>
       <div id="qr-seconds">30</div>
     </div>
   
-    <div id="result-title">MEILLEUR SCORE</div>
-    <div id="result-score">—</div>
-    <div id="result-sub">dB(A) — t'as tout donné ?</div>
-    <button id="btn-restart" onclick="resetGame()">REJOUER</button>
+    <center><button id="btn-restart" onclick="resetGame()">REJOUER</button></center>
   </div>
 
 
@@ -184,10 +199,10 @@ window.addEventListener("load", () => {
 });
 
 function startQrCountdown() {
-  const qrCode = document.getElementById("qr-code");
+  //const qrCode = document.getElementById("qr-code");
   const qrSeconds = document.getElementById("qr-seconds");
 
-  qrCode.style.display = "block";
+  //qrCode.style.display = "block";
 
   let remaining = 30;
 
@@ -198,14 +213,15 @@ function startQrCountdown() {
     if (remaining <= 0) {
       clearInterval(interval);
       // fin du timer
+      resetGame();
     }
   }, 1000);
 }
 
 
 document.addEventListener("DOMContentLoaded", () => {
-  document.getElementById("result-overlay").classList.add("show");
-  startQrCountdown(); // si tu veux lancer le chrono aussi
+  //document.getElementById("result-overlay").classList.add("show");
+  //startQrCountdown(); // si tu veux lancer le chrono aussi
 });
 
 
@@ -221,6 +237,14 @@ function showQRCode(filename) {
     //qr.src = `https://snt-savary.fr:3000/qr?file=${filename}`;
     qr.src = "http://snt-savary.fr:3000/qr?file=round_3.webm";
     qr.style.display = "block";
+}
+
+function restartPieTimer() {
+  const wrap = document.getElementById('qr-wrapper');
+  wrap.classList.remove('running');
+  void wrap.offsetWidth; // force reflow
+  wrap.classList.add('running');
+  startQrCountdown();
 }
 
 
@@ -447,6 +471,7 @@ function endGame(){
   gameOver=true;
   const best=Math.max(...scores.filter(s=>s!==null));
   const bestIdx=scores.indexOf(best);
+  
 
   document.getElementById('sv'+bestIdx).classList.add('gold');
   document.getElementById('s'+bestIdx).classList.remove('done');
@@ -454,8 +479,10 @@ function endGame(){
 
   document.getElementById('result-score').textContent=best.toFixed(1)+' dB';
   document.getElementById('result-overlay').classList.add('show');
-  startQrCountdown();  
-  showQRCode("round_3.webm");
+  
+  restartPieTimer();
+  //startQrCountdown();  
+  showQRCode("round_"+(bestIdx+1)+".webm");
   
 }
 
@@ -466,6 +493,13 @@ function resetGame(){
   gameOver=false;
   roundNum=0;
   scores=[null,null,null];
+
+  document.getElementById('cta').style.fontSize = "clamp(14px, 4.5vw, 52px)";
+  document.getElementById('cta').textContent='Appuie sur le buzzer et hurle "CHARAL !"';
+  const cta = document.getElementById('cta');
+  cta.classList.remove("karaoke");
+  void cta.offsetWidth; // reset
+
 
   document.getElementById('round-num').textContent='0';
   document.getElementById('result-overlay').classList.remove('show');
