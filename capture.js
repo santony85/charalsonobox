@@ -10,7 +10,7 @@ const { spawn } = require('child_process');
  * @param {function} opts.onChunk    - callback(Buffer)
  * @param {function} opts.onError    - callback(Error)
  */
-function startCapture({ sampleRate = 44100, channels = 1, device = 'plughw:3,0', chunkMs = 125, onChunk, onError }) {
+function startCapture({ sampleRate = 44100, channels = 1, device = 'hw:1,0', chunkMs = 125, onChunk, onError }) {
   const bytesPerSample = 2; // S16_LE
   const chunkSize = Math.floor((sampleRate * channels * bytesPerSample * chunkMs) / 1000);
 
@@ -25,7 +25,7 @@ function startCapture({ sampleRate = 44100, channels = 1, device = 'plughw:3,0',
   ]);*/
   
   const rec = spawn('arecord', [
-    '-D', 'plughw:3,0',   // ← ICI : plughw au lieu de hw
+    '-D', 'hw:1,0',   // ← ICI : plughw au lieu de hw
     '-f', 'S16_LE',
     '-r', String(sampleRate),
     '-c', "1",
