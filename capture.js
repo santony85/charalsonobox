@@ -14,15 +14,7 @@ function startCapture({ sampleRate = 44100, channels = 1, device = 'hw:1,0', chu
   const bytesPerSample = 2; // S16_LE
   const chunkSize = Math.floor((sampleRate * channels * bytesPerSample * chunkMs) / 1000);
 
-  /*const rec = spawn('arecord', [
-	'-D', device,
-	'-f', 'S16_LE',
-	'-r', String(sampleRate),
-	'-c', String(channels),
-	'--buffer-size=8192',
-	'-t', 'raw',   // sortie PCM brut, sans header WAV
-	'-'
-  ]);*/
+
   
   const rec = spawn('arecord', [
     '-D', 'hw:1,0',   // ← ICI : plughw au lieu de hw
