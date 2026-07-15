@@ -216,7 +216,7 @@ function createServer({ onStartRound }) {
 
   // --- LANCEMENT ---
   httpServer.listen(PORT, '0.0.0.0', () => {
-    console.log(`Serveur HTTP : http://192.168.1.118:${PORT}`);
+    console.log(`Serveur HTTP : http://charalbox.local:${PORT}`);
   });
 
   return { broadcast };
