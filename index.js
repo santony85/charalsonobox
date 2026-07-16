@@ -11,8 +11,8 @@ if (!fs.existsSync(VIDEOS_DIR)) fs.mkdirSync(VIDEOS_DIR);
 
 const CONFIG = {
   device: process.env.ALSA_DEVICE || 'hw:1,0',
-  sampleRate: 44100,
-  chunkMs: 200,
+  sampleRate: 48000,
+  chunkMs: 125,
   weighting: 'A',
   calibrationFile: path.join(__dirname, 'calibration.json'),
 };
