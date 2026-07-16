@@ -16,10 +16,10 @@ sudo apt install -y \
   libwayland-dev libxkbcommon-x11-0 \
   ffmpeg
 
-echo "=== Installation de mjpg-streamer ==="
+echo "=== Installation de mjpg-streamer (version stable) ==="
 cd /tmp
-git clone https://github.com/jacksonliam/mjpg-streamer.git
-cd mjpg-streamer/mjpg-streamer-experimental
+git clone https://github.com/mjpg-streamer/mjpg-streamer.git
+cd mjpg-streamer
 make
 sudo make install
 
@@ -41,14 +41,12 @@ Type=simple
 ExecStart=/bin/bash -c "sleep 6 && npm start --prefix /home/asantero/charalsonobox-main"
 WorkingDirectory=/home/asantero/charalsonobox-main
 
-# Wayland session
 Environment=XDG_SESSION_TYPE=wayland
 Environment=WAYLAND_DISPLAY=wayland-0
 Environment=DISPLAY=:0
 Environment=DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/1000/bus
 Environment=XDG_RUNTIME_DIR=/run/user/1000
 
-# Electron GPU OFF (stabilité ++)
 Environment=ELECTRON_DISABLE_GPU=1
 Environment=LIBGL_ALWAYS_SOFTWARE=1
 Environment=ELECTRON_ENABLE_WAYLAND=1
@@ -63,12 +61,12 @@ WantedBy=default.target
 EOF
 
 ##############################################
-# Webcam Service (MJPEG Streamer)
+# Webcam Service (MJPEG Streamer stable)
 ##############################################
 echo "=== Génération du service webcam ==="
 cat > "$SYSTEMD_DIR/webcam.service" << 'EOF'
 [Unit]
-Description=Webcam MJPEG Streamer
+Description=Webcam MJPEG Streamer (stable)
 After=graphical-session.target
 
 [Service]
