@@ -22,7 +22,7 @@ function weightingA(f) {
  * @param {'none'|'A'|'C'} weighting
  * @returns {{ dbSPL: number, peak: number, rms: number }}
  */
-function analyze(pcmBuffer, sampleRate = 44100, calibrationOffset = 0, weighting = 'A') {
+function analyze(pcmBuffer, sampleRate = 48000, calibrationOffset = 0, weighting = 'A') {
   // Sécurité : buffer vide ou taille impaire
   if (!pcmBuffer || pcmBuffer.length < 2) {
     return { dbSPL: 0, peak: 0, rms: 0 };
