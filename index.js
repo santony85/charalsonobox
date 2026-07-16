@@ -53,30 +53,7 @@ function recordRound(roundNumber, durationMs) {
     filename
   ]);
   
-  
-  /*const ff = spawn('ffmpeg', [
-    '-f', 'v4l2',
-    '-input_format', 'mjpeg',
-    '-video_size', '1920x1080',
-    '-framerate', '30',
-    '-i', '/dev/video0',
-    '-f', 'alsa',
-    '-ac', '1',
-    '-ar', '44100',
-    '-i', 'hw:2,0',
-    '-t', String(durationMs / 1000),
-    '-c:v', 'libx264',
-    '-preset', 'ultrafast',
-    '-crf', '23',
-    '-profile:v', 'baseline',  // ← compatibilité QuickTime
-    '-level', '3.0',           // ← compatibilité QuickTime
-    '-pix_fmt', 'yuv420p',     // ← indispensable pour QuickTime
-    '-c:a', 'aac',
-    '-b:a', '128k',
-    '-movflags', '+faststart', // ← lecture rapide / streaming
-    '-y',
-    filename
-  ]);*/
+
 
   ffmpegProcess = ff;
 
