@@ -10,7 +10,7 @@ const { spawn } = require('child_process');
  * @param {function} opts.onChunk    - callback(Buffer)
  * @param {function} opts.onError    - callback(Error)
  */
-function startCapture({ sampleRate = 44100, channels = 1, device = 'hw:1,0', chunkMs = 125, onChunk, onError }) {
+function startCapture({ sampleRate = 48000, channels = 1, device = 'hw:1,0', chunkMs = 125, onChunk, onError }) {
   const bytesPerSample = 2; // S16_LE
   const chunkSize = Math.floor((sampleRate * channels * bytesPerSample * chunkMs) / 1000);
 
@@ -19,37 +19,41 @@ function startCapture({ sampleRate = 44100, channels = 1, device = 'hw:1,0', chu
   const rec = spawn('arecord', [
     '-D', 'hw:1,0',   // ← ICI : plughw au lieu de hw
     '-f', 'S16_LE',
-    '-r', String(sampleRate),
-    '-c', "1",
-    '--buffer-size=8192',
+    '-r', '48000',
+    '-c', '1',
     '-t', 'raw',
     '-'
   ]);
 
   const ringBuffer = Buffer.alloc(chunkSize * 4); // Circular buffer
   let writePos = 0;
+  let buffered = 0;
 
-  rec.stdout.on('data', (data) => {
-	for (let i = 0; i < data.length; i++) {
-	  ringBuffer[writePos] = data[i];
-	  writePos = (writePos + 1) % ringBuffer.length;
+rec.stdout.on('data', (data) => {
+    for (let i = 0; i < data.length; i++) {
+        ringBuffer[writePos] = data[i];
+        writePos = (writePos + 1) % ringBuffer.length;
+        buffered++;
 
-	  if (writePos % chunkSize === 0) {
-		const startPos = (writePos - chunkSize + ringBuffer.length) % ringBuffer.length;
-		let chunk;
-		if (startPos + chunkSize <= ringBuffer.length) {
-		  chunk = ringBuffer.slice(startPos, startPos + chunkSize);
-		} else {
-		  chunk = Buffer.alloc(chunkSize);
-		  const part1Len = ringBuffer.length - startPos;
-		  ringBuffer.copy(chunk, 0, startPos, ringBuffer.length);
-		  ringBuffer.copy(chunk, part1Len, 0, chunkSize - part1Len);
-		}
-		if (chunk.length >= 2) onChunk(chunk);
-	  }
-	}
-  });
+        if (buffered >= chunkSize) {
+            const startPos = (writePos - chunkSize + ringBuffer.length) % ringBuffer.length;
+            let chunk;
 
+            if (startPos + chunkSize <= ringBuffer.length) {
+                chunk = ringBuffer.slice(startPos, startPos + chunkSize);
+            } else {
+                chunk = Buffer.alloc(chunkSize);
+                const part1Len = ringBuffer.length - startPos;
+                ringBuffer.copy(chunk, 0, startPos, ringBuffer.length);
+                ringBuffer.copy(chunk, part1Len, 0, chunkSize - part1Len);
+            }
+
+            buffered -= chunkSize;
+            onChunk(chunk);
+        }
+    }
+});
+	
   rec.stderr.on('data', (d) => {
 	const msg = d.toString();
 	if (!msg.includes('Recording')) onError?.(new Error(msg));
