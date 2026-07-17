@@ -97,6 +97,8 @@ systemctl --user daemon-reload
 systemctl --user enable sonometer.service
 systemctl --user enable webcam.service
 
+npm install
+
 echo "=== Installation terminée ==="
 echo "→ Démarrer sonometer : systemctl --user start sonometer"
 echo "→ Démarrer webcam : systemctl --user start webcam"
