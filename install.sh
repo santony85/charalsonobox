@@ -97,6 +97,7 @@ systemctl --user daemon-reload
 systemctl --user enable sonometer.service
 systemctl --user enable webcam.service
 
+cd $APP_DIR
 npm install
 
 echo "=== Installation terminée ==="
