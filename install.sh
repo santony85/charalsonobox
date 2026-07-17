@@ -9,14 +9,26 @@ echo "=== Installation des dépendances Linux Mint ==="
 sudo apt update
 sudo apt install -y \
   git build-essential cmake libjpeg-dev \
-  libv4l-dev imagemagick \
-  nodejs npm \
-  libgl1-mesa-dri libgl1-mesa-glx \
+  libv4l-dev \
   libx11-dev libxkbcommon-dev \
   libwayland-dev libxkbcommon-x11-0 \
-  ffmpeg
+  ffmpeg curl
 
-echo "=== Installation de mjpg-streamer (version stable) ==="
+##############################################
+# Node.js 20 (méthode officielle NodeSource)
+##############################################
+echo "=== Installation de Node.js 20 ==="
+curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
+sudo apt install -y nodejs
+
+echo "Version Node installée :"
+node -v
+npm -v
+
+##############################################
+# Installation de mjpg-streamer stable
+##############################################
+echo "=== Installation de mjpg-streamer (stable) ==="
 cd /tmp
 git clone https://github.com/mjpg-streamer/mjpg-streamer.git
 cd mjpg-streamer
