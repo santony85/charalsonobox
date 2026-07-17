@@ -31,7 +31,7 @@ npm -v
 echo "=== Installation de mjpg-streamer (stable) ==="
 cd /tmp
 git clone https://github.com/mjpg-streamer/mjpg-streamer.git
-cd mjpg-streamer
+cd mjpg-streamer/mjpg-streamer-experimental
 make
 sudo make install
 
